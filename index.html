@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>BinoStabilize | Stabilisateur &amp; Cadrage Vidéo Jumelles</title>
+  <title>BinoStabilize | Stabilisateur Vidéo Jumelles &amp; Digiscopie</title>
 
   <!-- Configuration Raccourci Écran d'accueil iOS (PWA / Web Clip) -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,8 +14,8 @@
 
   <style>
     :root {
-      --bg: #090d14;
-      --card-bg: #121926;
+      --bg: #070a10;
+      --card-bg: #101724;
       --card-border: #1e293b;
       --accent: #10b981;
       --accent-hover: #059669;
@@ -103,7 +103,7 @@
       text-align: center;
       cursor: pointer;
       transition: all 0.2s ease;
-      background: rgba(18, 25, 38, 0.8);
+      background: rgba(16, 23, 36, 0.8);
     }
 
     .import-zone:active {
@@ -180,7 +180,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      max-height: 55vh;
+      max-height: 52vh;
     }
 
     .viewport-inner {
@@ -515,8 +515,8 @@
         <div class="viewport-inner" id="viewportInner">
           <canvas id="previewCanvas"></canvas>
           <div class="reticle-center" id="reticle"></div>
-          <div class="overlay-tag" id="statusBadge">Stabilisé &amp; Centré</div>
-          <div class="overlay-hint" id="overlayHint">👆 Touchez l'oiseau à l'écran pour le centrer</div>
+          <div class="overlay-tag" id="statusBadge">Prêt à stabiliser</div>
+          <div class="overlay-hint" id="overlayHint">👆 Touchez l'oiseau à l'écran pour le verrouiller</div>
         </div>
       </div>
 
@@ -547,16 +547,34 @@
         <button class="seg-btn" data-view="original">Originale brute</button>
       </div>
 
-      <!-- Barre d'état des points de centrage -->
+      <!-- Bouton d'analyse automatique des tremblements -->
+      <div style="margin-top: 10px;">
+        <button class="btn btn-primary" id="btnAutoAnalyze" style="background: #0ea5e9; color: #fff;">
+          ⚡ Stabiliser automatiquement les secousses
+        </button>
+      </div>
+
+      <!-- Barre d'état des points manuels -->
       <div class="points-bar" style="margin-top: 10px;">
         <div>
-          <span>Cible : </span>
-          <strong style="color: var(--accent);" id="pointsCountLabel">Centre automatique</strong>
+          <span>Pointage oiseau : </span>
+          <strong style="color: var(--accent);" id="pointsCountLabel">Centre</strong>
         </div>
         <div style="display: flex; gap: 6px;">
           <button class="btn btn-secondary btn-sm" id="btnResetPoints">
             Réinitialiser
           </button>
+        </div>
+      </div>
+
+      <!-- Jauge de progression -->
+      <div class="progress-box" id="progressBox">
+        <div class="progress-header">
+          <span id="progressText">Analyse des mouvements...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBarFill"></div>
         </div>
       </div>
 
@@ -566,9 +584,18 @@
         <div class="control-row">
           <div class="control-header">
             <span>Zoom / Recadrage (supprimer le noir des jumelles)</span>
-            <span class="val" id="zoomVal">1.4x</span>
+            <span class="val" id="zoomVal">1.40x</span>
           </div>
-          <input type="range" id="zoomSlider" min="1.0" max="2.6" value="1.4" step="0.05">
+          <input type="range" id="zoomSlider" min="1.0" max="2.8" value="1.40" step="0.05">
+        </div>
+
+        <!-- Force de lissage automatique -->
+        <div class="control-row">
+          <div class="control-header">
+            <span>Force du filtre anti-secousses</span>
+            <span class="val" id="smoothWindowVal">Forte (35 frames)</span>
+          </div>
+          <input type="range" id="smoothWindowSlider" min="10" max="60" value="35" step="5">
         </div>
 
         <!-- Ajustement fin horizontal -->
@@ -589,31 +616,11 @@
           <input type="range" id="manualYSlider" min="-40" max="40" value="0" step="1">
         </div>
 
-        <!-- Stabilisateur anti-secousses des mains -->
-        <div class="control-row">
-          <div class="control-header">
-            <span>Absorption des secousses (mains)</span>
-            <span class="val" id="shakeFilterVal">Moyenne</span>
-          </div>
-          <input type="range" id="shakeFilterSlider" min="0" max="10" value="5" step="1">
-        </div>
-
         <div class="notice">
-          🎯 <strong>Astuce visuelle :</strong><br>
-          1. <strong>Touchez l'oiseau</strong> sur l'écran pour le placer au milieu du réticule vert.<br>
-          2. Utilisez le <strong>curseur de Zoom</strong> pour faire disparaître complètement le cercle noir des jumelles.<br>
-          3. Ajustez avec les curseurs X et Y si l'oiseau doit être décalé vers le haut ou le bas !
-        </div>
-
-        <!-- Jauge d'export -->
-        <div class="progress-box" id="progressBox">
-          <div class="progress-header">
-            <span id="progressText">Enregistrement stabilisé en cours...</span>
-            <span id="progressPercent">0%</span>
-          </div>
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="progressBarFill"></div>
-          </div>
+          💡 <strong>Deux méthodes complémentaires :</strong><br>
+          1. <strong>Automatique :</strong> Cliquez sur le bouton bleu <em>« ⚡ Stabiliser automatiquement les secousses »</em>. L'algorithme calcule le flux de chaque micro-mouvement de vos mains et les annule complètement.<br>
+          2. <strong>Manuelle :</strong> Touchez l'oiseau directement sur l'écran pour le placer au centre. Vous pouvez ajouter des repères à plusieurs moments de la vidéo.<br>
+          3. Réglez le <strong>Zoom</strong> pour effacer le contour noir de l'oculaire des jumelles.
         </div>
 
         <!-- Actions -->
@@ -675,15 +682,16 @@
     const overlayHint = document.getElementById('overlayHint');
     const pointsCountLabel = document.getElementById('pointsCountLabel');
     const btnResetPoints = document.getElementById('btnResetPoints');
+    const btnAutoAnalyze = document.getElementById('btnAutoAnalyze');
 
     const zoomSlider = document.getElementById('zoomSlider');
     const zoomVal = document.getElementById('zoomVal');
+    const smoothWindowSlider = document.getElementById('smoothWindowSlider');
+    const smoothWindowVal = document.getElementById('smoothWindowVal');
     const manualXSlider = document.getElementById('manualXSlider');
     const manualXVal = document.getElementById('manualXVal');
     const manualYSlider = document.getElementById('manualYSlider');
     const manualYVal = document.getElementById('manualYVal');
-    const shakeFilterSlider = document.getElementById('shakeFilterSlider');
-    const shakeFilterVal = document.getElementById('shakeFilterVal');
 
     const progressBox = document.getElementById('progressBox');
     const progressText = document.getElementById('progressText');
@@ -696,30 +704,37 @@
     const shareBtn = document.getElementById('shareBtn');
     const directDownloadBtn = document.getElementById('directDownloadBtn');
 
-    // États de l'application
+    // États
     let currentViewMode = 'stabilized';
+    let isAnalyzing = false;
     let isExporting = false;
     let exportedFile = null;
     let exportedUrl = null;
 
-    // Points de suivi temporel de l'oiseau : [{ time, x, y }, ...] (coordonnées normalisées 0..1 sur la vidéo d'origine)
+    // Profil de tremblements calculé : tableau de { time, dx, dy, cumX, cumY, corrX, corrY }
+    let motionProfile = [];
+
+    // Points de suivi manuels (Waypoints) : [{ time, x, y }, ...] (normalisé 0..1)
     let birdWaypoints = [];
 
-    // Dernier état de rendu pour la conversion tactile
-    let lastDrawState = {
-      drawX: 0,
-      drawY: 0,
-      drawW: 0,
-      drawH: 0
-    };
+    let lastDrawState = { drawX: 0, drawY: 0, drawW: 0, drawH: 0 };
 
-    // 1. Chargement instantané et adaptation automatique du format vidéo
+    // Offscreen canvas pour l'analyse du flux optique
+    const optCanvas = document.createElement('canvas');
+    const optCtx = optCanvas.getContext('2d', { willReadFrequently: true });
+    const OW = 160;
+    const OH = 120;
+    optCanvas.width = OW;
+    optCanvas.height = OH;
+
+    // 1. Chargement de la vidéo
     videoInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
       resultBox.style.display = 'none';
       birdWaypoints = [];
+      motionProfile = [];
       updateWaypointsUI();
 
       const videoUrl = URL.createObjectURL(file);
@@ -731,9 +746,7 @@
 
         const vw = sourceVideo.videoWidth || 1280;
         const vh = sourceVideo.videoHeight || 720;
-        const aspect = vw / vh;
 
-        // Ajuster dynamiquement le conteneur pour respecter le ratio exact de la vidéo (évite tout étirement)
         viewportInner.style.aspectRatio = `${vw} / ${vh}`;
         previewCanvas.width = vw;
         previewCanvas.height = vh;
@@ -743,25 +756,263 @@
 
         sourceVideo.currentTime = 0;
         render();
+
+        // Proposer l'analyse automatique immédiatement
+        statusBadge.textContent = 'Vidéo prête. Lancez la stabilisation !';
       };
     });
 
-    // 2. Gestion du pointage tactile direct (pointer l'oiseau)
+    // 2. STABILISATION AUTOMATIQUE PAR FLUX OPTIQUE RÉEL (GRID MEDIAN MATCHING)
+    btnAutoAnalyze.addEventListener('click', async () => {
+      if (isAnalyzing || isExporting || sourceVideo.readyState < 2) return;
+      isAnalyzing = true;
+      sourceVideo.pause();
+      playBtn.textContent = '▶';
+
+      progressBox.style.display = 'block';
+      progressText.textContent = 'Analyse des micro-tremblements en cours...';
+      progressBarFill.style.width = '0%';
+      btnAutoAnalyze.disabled = true;
+      statusBadge.textContent = '⚡ Analyse en cours...';
+
+      motionProfile = [];
+      const duration = sourceVideo.duration || 1;
+
+      // Définir la zone centrale (ignore le cercle noir externe des jumelles)
+      const srcW = sourceVideo.videoWidth;
+      const srcH = sourceVideo.videoHeight;
+      const roiW = srcW * 0.6;
+      const roiH = srcH * 0.6;
+      const roiX = (srcW - roiW) / 2;
+      const roiY = (srcH - roiH) / 2;
+
+      // Revenir au début
+      sourceVideo.currentTime = 0;
+      await new Promise(res => {
+        const onSeek = () => {
+          sourceVideo.removeEventListener('seeked', onSeek);
+          res();
+        };
+        sourceVideo.addEventListener('seeked', onSeek);
+        setTimeout(res, 400);
+      });
+
+      let prevGray = null;
+
+      // On fait jouer la vidéo à 1.5x pour que le GPU décode 100% des images réelles
+      sourceVideo.muted = true;
+      sourceVideo.playbackRate = 1.5;
+      await sourceVideo.play();
+
+      const analyzeFrame = () => {
+        if (!isAnalyzing) return;
+
+        const curT = sourceVideo.currentTime;
+        const percent = Math.min(100, Math.round((curT / duration) * 100));
+        progressBarFill.style.width = `${percent}%`;
+        progressPercent.textContent = `${percent}%`;
+        seekBar.value = curT;
+        updateTimeDisplay(curT, duration);
+
+        // Extraire la zone centrale sur le canvas d'analyse
+        optCtx.drawImage(sourceVideo, roiX, roiY, roiW, roiH, 0, 0, OW, OH);
+        const imgData = optCtx.getImageData(0, 0, OW, OH);
+        const currGray = toGrayscale(imgData.data, OW, OH);
+
+        let dx = 0, dy = 0;
+        if (prevGray) {
+          const disp = computeGridDisplacement(prevGray, currGray, OW, OH);
+          // Convertir en pixels vidéo réels
+          dx = disp.dx * (roiW / OW);
+          dy = disp.dy * (roiH / OH);
+        }
+
+        motionProfile.push({ time: curT, dx, dy });
+        prevGray = currGray;
+
+        if (sourceVideo.ended || curT >= duration - 0.05) {
+          sourceVideo.pause();
+          sourceVideo.playbackRate = 1.0;
+          isAnalyzing = false;
+
+          // Calculer les corrections lissées
+          computeStabilizationCorrections();
+
+          progressBox.style.display = 'none';
+          btnAutoAnalyze.disabled = false;
+          statusBadge.textContent = '✅ Stabilisation calculée avec succès !';
+
+          // Revenir au début et prévisualiser
+          sourceVideo.currentTime = 0;
+          render();
+          return;
+        }
+
+        if ('requestVideoFrameCallback' in sourceVideo) {
+          sourceVideo.requestVideoFrameCallback(analyzeFrame);
+        } else {
+          requestAnimationFrame(analyzeFrame);
+        }
+      };
+
+      if ('requestVideoFrameCallback' in sourceVideo) {
+        sourceVideo.requestVideoFrameCallback(analyzeFrame);
+      } else {
+        requestAnimationFrame(analyzeFrame);
+      }
+    });
+
+    // Luminance
+    function toGrayscale(rgba, w, h) {
+      const gray = new Uint8Array(w * h);
+      for (let i = 0, j = 0; i < rgba.length; i += 4, j++) {
+        gray[j] = (rgba[i] * 77 + rgba[i + 1] * 150 + rgba[i + 2] * 29) >> 8;
+      }
+      return gray;
+    }
+
+    // 4x4 Grid Median Tracker (insensible aux mouvements locaux des ailes ou des branches)
+    function computeGridDisplacement(prev, curr, w, h) {
+      const patchSize = 20;
+      const searchR = 10;
+      const gridX = 4, gridY = 4;
+      const dxList = [], dyList = [];
+
+      const startX = Math.floor(w * 0.15);
+      const endX = Math.floor(w * 0.85);
+      const startY = Math.floor(h * 0.15);
+      const endY = Math.floor(h * 0.85);
+
+      for (let gy = 0; gy < gridY; gy++) {
+        const py = Math.floor(startY + (gy / (gridY - 1)) * (endY - startY - patchSize));
+        for (let gx = 0; gx < gridX; gx++) {
+          const px = Math.floor(startX + (gx / (gridX - 1)) * (endX - startX - patchSize));
+
+          let bestDx = 0, bestDy = 0, minSad = Infinity;
+          for (let sdy = -searchR; sdy <= searchR; sdy++) {
+            for (let sdx = -searchR; sdx <= searchR; sdx++) {
+              let sad = 0;
+              for (let y = 0; y < patchSize; y += 2) {
+                const rowP = (py + y) * w + px;
+                const rowC = (py + y + sdy) * w + px + sdx;
+                for (let x = 0; x < patchSize; x += 2) {
+                  sad += Math.abs(prev[rowP + x] - curr[rowC + x]);
+                }
+              }
+              if (sad < minSad) {
+                minSad = sad;
+                bestDx = sdx;
+                bestDy = sdy;
+              }
+            }
+          }
+          dxList.push(bestDx);
+          dyList.push(bestDy);
+        }
+      }
+
+      // Médiane
+      dxList.sort((a, b) => a - b);
+      dyList.sort((a, b) => a - b);
+      const medianDx = dxList[Math.floor(dxList.length / 2)];
+      const medianDy = dyList[Math.floor(dyList.length / 2)];
+
+      return { dx: medianDx, dy: medianDy };
+    }
+
+    // 3. Calcul de la trajectoire et lissage gaussien anti-tremblements
+    function computeStabilizationCorrections() {
+      if (motionProfile.length === 0) return;
+
+      // 1. Trajectoire cumulée X, Y
+      let cumX = 0, cumY = 0;
+      for (let i = 0; i < motionProfile.length; i++) {
+        cumX += motionProfile[i].dx;
+        cumY += motionProfile[i].dy;
+        motionProfile[i].cumX = cumX;
+        motionProfile[i].cumY = cumY;
+      }
+
+      // 2. Lissage gaussien par fenêtre glissante
+      const windowSize = parseInt(smoothWindowSlider.value);
+      const half = Math.floor(windowSize / 2);
+      const sigma = Math.max(1, half / 2);
+
+      for (let i = 0; i < motionProfile.length; i++) {
+        let sumX = 0, sumY = 0, wSum = 0;
+        const start = Math.max(0, i - half);
+        const end = Math.min(motionProfile.length - 1, i + half);
+
+        for (let j = start; j <= end; j++) {
+          const dist = j - i;
+          const weight = Math.exp(-(dist * dist) / (2 * sigma * sigma));
+          sumX += motionProfile[j].cumX * weight;
+          sumY += motionProfile[j].cumY * weight;
+          wSum += weight;
+        }
+
+        const smoothX = sumX / wSum;
+        const smoothY = sumY / wSum;
+
+        // La correction est l'écart entre la trajectoire lissée et la secousse brute
+        motionProfile[i].corrX = smoothX - motionProfile[i].cumX;
+        motionProfile[i].corrY = smoothY - motionProfile[i].cumY;
+      }
+    }
+
+    smoothWindowSlider.addEventListener('input', () => {
+      const val = parseInt(smoothWindowSlider.value);
+      let desc = 'Moyenne';
+      if (val <= 15) desc = 'Légère';
+      else if (val >= 45) desc = 'Maximale';
+      smoothWindowVal.textContent = `${desc} (${val} frames)`;
+      computeStabilizationCorrections();
+      render();
+    });
+
+    // Récupérer la correction anti-secousse au temps t
+    function getAutoStabilizeOffset(t) {
+      if (motionProfile.length === 0) return { corrX: 0, corrY: 0 };
+      if (t <= motionProfile[0].time) return motionProfile[0];
+      const last = motionProfile[motionProfile.length - 1];
+      if (t >= last.time) return last;
+
+      let low = 0, high = motionProfile.length - 1;
+      while (low <= high) {
+        const mid = (low + high) >> 1;
+        if (motionProfile[mid].time <= t) low = mid + 1;
+        else high = mid - 1;
+      }
+
+      const i0 = Math.max(0, high);
+      const i1 = Math.min(motionProfile.length - 1, low);
+      if (i0 === i1) return motionProfile[i0];
+
+      const p0 = motionProfile[i0];
+      const p1 = motionProfile[i1];
+      const dt = p1.time - p0.time;
+      const factor = dt > 0.0001 ? (t - p0.time) / dt : 0;
+
+      return {
+        corrX: p0.corrX + (p1.corrX - p0.corrX) * factor,
+        corrY: p0.corrY + (p1.corrY - p0.corrY) * factor
+      };
+    }
+
+    // 4. POINTAGE MANUEL DIRECT (CLIC SUR L'OISEAU)
     function onPointerTap(event) {
-      if (isExporting || sourceVideo.readyState < 2) return;
+      if (isAnalyzing || isExporting || sourceVideo.readyState < 2) return;
 
       const rect = previewCanvas.getBoundingClientRect();
       const clientX = event.clientX || (event.touches && event.touches[0].clientX);
       const clientY = event.clientY || (event.touches && event.touches[0].clientY);
       if (clientX === undefined || clientY === undefined) return;
 
-      // Position en pixels canvas
       const scaleX = previewCanvas.width / rect.width;
       const scaleY = previewCanvas.height / rect.height;
       const tapCanvasX = (clientX - rect.left) * scaleX;
       const tapCanvasY = (clientY - rect.top) * scaleY;
 
-      // Retrouver quel point de l'image vidéo originale a été cliqué
       const { drawX, drawY, drawW, drawH } = lastDrawState;
       if (drawW <= 0 || drawH <= 0) return;
 
@@ -774,7 +1025,7 @@
       const curTime = sourceVideo.currentTime;
 
       // Ajouter ou mettre à jour le repère pour ce moment (seuil 0.2s)
-      const existing = birdWaypoints.findIndex(p => Math.abs(p.time - curTime) < 0.2);
+      const existing = birdWaypoints.findIndex(p => Math.abs(p.time - curTime) < 0.25);
       if (existing >= 0) {
         birdWaypoints[existing].x = clampedX;
         birdWaypoints[existing].y = clampedY;
@@ -789,29 +1040,19 @@
 
       statusBadge.textContent = `🎯 Oiseau fixé à ${curTime.toFixed(1)}s !`;
       setTimeout(() => {
-        if (!isExporting) statusBadge.textContent = 'Stabilisé & Centré';
+        if (!isExporting && !isAnalyzing) statusBadge.textContent = 'Stabilisé & Centré';
       }, 1400);
     }
 
     viewportInner.addEventListener('click', onPointerTap);
 
-    // 3. Calcul de la cible interpolée au temps t
-    function getTargetCoordinates(t) {
-      if (birdWaypoints.length === 0) {
-        return { x: 0.5, y: 0.5 };
-      }
-      if (birdWaypoints.length === 1) {
-        return { x: birdWaypoints[0].x, y: birdWaypoints[0].y };
-      }
-      if (t <= birdWaypoints[0].time) {
-        return { x: birdWaypoints[0].x, y: birdWaypoints[0].y };
-      }
+    function getManualTarget(t) {
+      if (birdWaypoints.length === 0) return { x: 0.5, y: 0.5 };
+      if (birdWaypoints.length === 1) return { x: birdWaypoints[0].x, y: birdWaypoints[0].y };
+      if (t <= birdWaypoints[0].time) return { x: birdWaypoints[0].x, y: birdWaypoints[0].y };
       const last = birdWaypoints[birdWaypoints.length - 1];
-      if (t >= last.time) {
-        return { x: last.x, y: last.y };
-      }
+      if (t >= last.time) return { x: last.x, y: last.y };
 
-      // Trouver les 2 repères encadrants
       let p0 = birdWaypoints[0];
       let p1 = birdWaypoints[1];
       for (let i = 0; i < birdWaypoints.length - 1; i++) {
@@ -824,9 +1065,7 @@
 
       const dt = p1.time - p0.time;
       let alpha = dt > 0.0001 ? (t - p0.time) / dt : 0;
-
-      // Lissage cubique (smoothstep) pour un travelling soyeux
-      alpha = alpha * alpha * (3 - 2 * alpha);
+      alpha = alpha * alpha * (3 - 2 * alpha); // Lissage doux
 
       return {
         x: p0.x + alpha * (p1.x - p0.x),
@@ -834,7 +1073,24 @@
       };
     }
 
-    // 4. Fonction de rendu haute qualité
+    function updateWaypointsUI() {
+      const count = birdWaypoints.length;
+      if (count === 0) {
+        pointsCountLabel.textContent = 'Centre automatique';
+      } else if (count === 1) {
+        pointsCountLabel.textContent = '1 repère oiseau';
+      } else {
+        pointsCountLabel.textContent = `${count} repères de suivi`;
+      }
+    }
+
+    btnResetPoints.addEventListener('click', () => {
+      birdWaypoints = [];
+      updateWaypointsUI();
+      render();
+    });
+
+    // 5. FONCTION DE RENDU HYBRIDE (AUTOMATIQUE + MANUEL + ZOOM)
     function render() {
       const cw = previewCanvas.width;
       const ch = previewCanvas.height;
@@ -857,12 +1113,19 @@
       const drawW = cw * zoom;
       const drawH = ch * zoom;
 
-      // Récupérer la cible (l'oiseau)
-      const target = getTargetCoordinates(sourceVideo.currentTime);
+      const curT = sourceVideo.currentTime;
 
-      // Calcul pour amener la cible exactement au centre de l'écran
-      const drawX = (cw / 2) - (target.x * drawW) + manualOffsetX;
-      const drawY = (ch / 2) - (target.y * drawH) + manualOffsetY;
+      // 1. Cible manuelle (où se trouve l'oiseau dans le cadre)
+      const target = getManualTarget(curT);
+
+      // 2. Correction automatique des micro-tremblements
+      const autoCorr = getAutoStabilizeOffset(curT);
+      const shiftAutoX = autoCorr.corrX || 0;
+      const shiftAutoY = autoCorr.corrY || 0;
+
+      // Position finale calculée pour que la cible soit centrée ET que les secousses soient annulées
+      const drawX = (cw / 2) - (target.x * drawW) + shiftAutoX + manualOffsetX;
+      const drawY = (ch / 2) - (target.y * drawH) + shiftAutoY + manualOffsetY;
 
       lastDrawState = { drawX, drawY, drawW, drawH };
 
@@ -887,7 +1150,7 @@
         ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
         ctx.restore();
 
-        // Ligne de démarcation verte
+        // Ligne verte de séparation
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -895,25 +1158,24 @@
         ctx.lineTo(mid, ch);
         ctx.stroke();
 
-        // Étiquettes visuelles
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 20px -apple-system, sans-serif';
-        ctx.fillText('Originale (avec cercle noir)', 16, 36);
-        ctx.fillText('Stabilisée & Rognée', mid + 16, 36);
+        ctx.fillText('Originale brute', 16, 36);
+        ctx.fillText('Stabilisée', mid + 16, 36);
       }
     }
 
-    // 5. Boucle de lecture fluide
-    function loop() {
-      if (!sourceVideo.paused && !sourceVideo.ended && !isExporting) {
+    // 6. LECTURE FLUIDE PREVIEW
+    function playbackLoop() {
+      if (!sourceVideo.paused && !sourceVideo.ended && !isExporting && !isAnalyzing) {
         render();
         seekBar.value = sourceVideo.currentTime;
         updateTimeDisplay(sourceVideo.currentTime, sourceVideo.duration);
 
         if ('requestVideoFrameCallback' in sourceVideo) {
-          sourceVideo.requestVideoFrameCallback(loop);
+          sourceVideo.requestVideoFrameCallback(playbackLoop);
         } else {
-          requestAnimationFrame(loop);
+          requestAnimationFrame(playbackLoop);
         }
       }
     }
@@ -922,7 +1184,7 @@
       if (sourceVideo.paused) {
         sourceVideo.play();
         playBtn.textContent = '⏸';
-        loop();
+        playbackLoop();
       } else {
         sourceVideo.pause();
         playBtn.textContent = '▶';
@@ -932,7 +1194,7 @@
 
     sourceVideo.addEventListener('play', () => {
       playBtn.textContent = '⏸';
-      loop();
+      if (!isAnalyzing && !isExporting) playbackLoop();
     });
 
     sourceVideo.addEventListener('pause', () => {
@@ -976,24 +1238,6 @@
       timeLabel.textContent = `${fmt(cur)} / ${fmt(dur || 0)}`;
     }
 
-    function updateWaypointsUI() {
-      const count = birdWaypoints.length;
-      if (count === 0) {
-        pointsCountLabel.textContent = 'Centre automatique';
-      } else if (count === 1) {
-        pointsCountLabel.textContent = '1 oiseau fixé';
-      } else {
-        pointsCountLabel.textContent = `${count} repères de suivi`;
-      }
-    }
-
-    btnResetPoints.addEventListener('click', () => {
-      birdWaypoints = [];
-      updateWaypointsUI();
-      render();
-    });
-
-    // Écouteurs de sliders
     zoomSlider.addEventListener('input', () => {
       zoomVal.textContent = `${parseFloat(zoomSlider.value).toFixed(2)}x`;
       render();
@@ -1009,13 +1253,6 @@
       render();
     });
 
-    shakeFilterSlider.addEventListener('input', () => {
-      const v = parseInt(shakeFilterSlider.value);
-      shakeFilterVal.textContent = v <= 2 ? 'Légère' : v >= 8 ? 'Très forte' : 'Moyenne';
-      render();
-    });
-
-    // Boutons de vue
     document.querySelectorAll('.seg-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
@@ -1025,9 +1262,9 @@
       });
     });
 
-    // 6. Exportation vidéo haute qualité synchronisée
+    // 7. EXPORTATION VIDÉO PARFAITEMENT SYNCHRONISÉE
     exportBtn.addEventListener('click', async () => {
-      if (isExporting || sourceVideo.readyState < 2) return;
+      if (isExporting || isAnalyzing || sourceVideo.readyState < 2) return;
       isExporting = true;
       sourceVideo.pause();
       playBtn.textContent = '▶';
@@ -1102,7 +1339,6 @@
 
       recorder.start(100);
 
-      // Lecture en direct
       sourceVideo.muted = true;
       sourceVideo.playbackRate = 1.0;
       await sourceVideo.play();
@@ -1142,7 +1378,6 @@
       }
     });
 
-    // Sauvegarde et partage
     shareBtn.addEventListener('click', async () => {
       if (!exportedFile) return;
 
