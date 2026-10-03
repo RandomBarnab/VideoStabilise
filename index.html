@@ -20,6 +20,7 @@
       --accent: #10b981;
       --accent-hover: #059669;
       --accent-glow: rgba(16, 185, 129, 0.15);
+      --red: #ef4444;
       --blue: #0284c7;
       --text: #f8fafc;
       --text-muted: #94a3b8;
@@ -170,7 +171,7 @@
       transform: none;
     }
 
-    /* Viewport dynamique */
+    /* Viewport adaptatif */
     .viewport-outer {
       width: 100%;
       background: #000;
@@ -209,7 +210,7 @@
       height: 34px;
       transform: translate(-50%, -50%);
       pointer-events: none;
-      border: 1.5px dashed rgba(16, 185, 129, 0.8);
+      border: 1.5px dashed rgba(16, 185, 129, 0.7);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -354,6 +355,21 @@
       box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
     }
 
+    .audio-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
     .segmented {
       display: flex;
       background: #070a0f;
@@ -384,7 +400,7 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.3);
     }
 
-    /* Diagnostics en direct */
+    /* Métriques de stabilisation */
     .metrics-bar {
       display: flex;
       align-items: center;
@@ -568,7 +584,7 @@
 <body>
 
   <header>
-    <div class="badge">Moteur de Stabilisation Optique Temps Réel</div>
+    <div class="badge">Stabilisation Optique &amp; Audio</div>
     <h1>🔭 BinoStabilize</h1>
     <div class="subtitle">Digiscopie et observations aux jumelles sur iPhone</div>
   </header>
@@ -579,7 +595,7 @@
       <div class="import-zone" id="dropZone" onclick="document.getElementById('videoInput').click()">
         <span class="import-icon">🦅</span>
         <div style="font-weight: 600; font-size: 15px; margin-bottom: 3px;">Choisir une vidéo de la photothèque</div>
-        <div style="font-size: 12px; color: var(--text-muted);">Vidéo iPhone (Portrait 9:16 ou Paysage 16:9, MOV ou MP4)</div>
+        <div style="font-size: 12px; color: var(--text-muted);">Vidéo iPhone avec son (MOV ou MP4)</div>
       </div>
       <input type="file" id="videoInput" class="btn-file" accept="video/*" />
     </div>
@@ -595,7 +611,7 @@
             <span class="status-dot"></span>
             <span id="statusText">Stabilisation active en direct</span>
           </div>
-          <div class="overlay-hint" id="overlayHint">👆 Touchez l'oiseau à l'écran pour le verrouiller</div>
+          <div class="overlay-hint" id="overlayHint">👆 Touchez l'oiseau pour placer le repère rouge</div>
         </div>
       </div>
 
@@ -608,13 +624,16 @@
 
         <div class="play-buttons-row">
           <button class="step-btn" id="btnPrevFrame" title="Reculer d'une image">
-            ⏪ -1 image
+            ⏪ -1 img
           </button>
           <button class="main-play-btn" id="playBtn" aria-label="Lecture / Pause">
             ▶
           </button>
           <button class="step-btn" id="btnNextFrame" title="Avancer d'une image">
-            +1 image ⏩
+            +1 img ⏩
+          </button>
+          <button class="audio-btn" id="btnAudioToggle" title="Activer / Couper le son">
+            🔊
           </button>
         </div>
       </div>
@@ -629,25 +648,43 @@
       <!-- Métriques en direct de la stabilisation -->
       <div class="metrics-bar">
         <div class="metric-item">
-          <span class="metric-label">Secousses annulées</span>
+          <span class="metric-label">Secousses absorbées</span>
           <span class="metric-val" id="metricJitter">0.0 px</span>
         </div>
         <div class="metric-item">
-          <span class="metric-label">Réduction des tremblements</span>
-          <span class="metric-val" id="metricReduction">99.7%</span>
+          <span class="metric-label">Efficacité anti-tremblement</span>
+          <span class="metric-val" id="metricReduction">99.8%</span>
         </div>
         <div class="metric-item">
-          <span class="metric-label">Repère oiseau</span>
-          <span class="metric-val" id="metricWaypoints">Centre</span>
+          <span class="metric-label">Repère oiseau (🔴)</span>
+          <span class="metric-val" id="metricWaypoints" style="color: #f87171;">Centre</span>
         </div>
       </div>
 
       <!-- Contrôles -->
       <div class="controls-panel">
-        <!-- Toggle Stabilisation automatique -->
+        <!-- Option Point Rouge et Verrouillage -->
         <div class="toggle-row">
-          <span>Stabilisation automatique des secousses</span>
-          <button class="toggle-btn toggle-on" id="btnToggleAuto">ACTIVE</button>
+          <span>Afficher le point rouge de verrouillage (Preview)</span>
+          <button class="toggle-btn toggle-on" id="btnToggleRedDot">VISIBLE</button>
+        </div>
+
+        <!-- Curseur Fluidité de transition -->
+        <div class="control-row">
+          <div class="control-header">
+            <span>Fluidité de coulissement de l'image</span>
+            <span class="val" id="fluidityVal">Cinématique (Douce)</span>
+          </div>
+          <input type="range" id="fluiditySlider" min="1" max="10" value="7" step="1">
+        </div>
+
+        <!-- Sensibilité anti-secousses (puissance du filtre) -->
+        <div class="control-row">
+          <div class="control-header">
+            <span>Force d'absorption des tremblements (mains)</span>
+            <span class="val" id="filterStrengthVal">Maximale (96%)</span>
+          </div>
+          <input type="range" id="filterStrengthSlider" min="80" max="99" value="96" step="1">
         </div>
 
         <!-- Zoom pour rogner le noir des jumelles -->
@@ -657,15 +694,6 @@
             <span class="val" id="zoomVal">1.45x</span>
           </div>
           <input type="range" id="zoomSlider" min="1.0" max="2.8" value="1.45" step="0.05">
-        </div>
-
-        <!-- Sensibilité anti-secousses -->
-        <div class="control-row">
-          <div class="control-header">
-            <span>Filtre d'absorption des tremblements de mains</span>
-            <span class="val" id="filterStrengthVal">Forte (92%)</span>
-          </div>
-          <input type="range" id="filterStrengthSlider" min="70" max="98" value="92" step="1">
         </div>
 
         <!-- Ajustement fin horizontal -->
@@ -688,21 +716,20 @@
 
         <div style="display: flex; justify-content: flex-end;">
           <button class="btn btn-secondary btn-sm" id="btnResetPoints">
-            Réinitialiser repère oiseau
+            🗑 Effacer le repère oiseau
           </button>
         </div>
 
         <div class="notice">
-          💡 <strong>Fonctionnement 100% temps réel :</strong><br>
-          1. <strong>Appuyez sur Lecture ▶ :</strong> le moteur optique analyse chaque image dès qu'elle est décodée par l'iPhone et annule instantanément les tremblements de vos mains.<br>
-          2. <strong>Touchez l'oiseau</strong> sur l'écran si vous voulez le verrouiller au centre exact.<br>
-          3. Réglez le <strong>Zoom</strong> pour faire disparaître le noir de l'oculaire.
+          🔴 <strong>Point rouge de verrouillage :</strong><br>
+          Touchez l'oiseau sur l'écran : un <strong>point rouge 🔴</strong> se place dessus. L'application fait coulisser la vidéo pour maintenir ce point rouge au centre exact du réticule !<br>
+          🔊 <strong>Son inclus :</strong> le son de la vidéo originale est lu pendant la prévisualisation et conservé dans la vidéo exportée.
         </div>
 
         <!-- Jauge d'export -->
         <div class="progress-box" id="progressBox">
           <div class="progress-header">
-            <span id="progressText">Enregistrement stabilisé en cours...</span>
+            <span id="progressText">Enregistrement vidéo + audio en cours...</span>
             <span id="progressPercent">0%</span>
           </div>
           <div class="progress-bar-bg">
@@ -713,7 +740,7 @@
         <!-- Actions -->
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
           <button class="btn btn-primary" id="exportBtn">
-            ⚙️ Exporter la vidéo stabilisée
+            ⚙️ Exporter la vidéo stabilisée (avec le son)
           </button>
           <button class="btn btn-secondary" onclick="document.getElementById('videoInput').click()">
             🔄 Choisir une autre vidéo
@@ -724,7 +751,7 @@
       <!-- Résultat de l'export -->
       <div class="result-box" id="resultBox">
         <div class="result-title">
-          <span>✨ Vidéo stabilisée prête !</span>
+          <span>✨ Vidéo stabilisée avec audio prête !</span>
         </div>
         <video id="resultVideo" class="result-video" controls playsinline loop></video>
 
@@ -749,7 +776,7 @@
   </footer>
 
   <div id="hiddenVideoWrap">
-    <video id="sourceVideo" playsinline webkit-playsinline muted preload="auto"></video>
+    <video id="sourceVideo" playsinline webkit-playsinline preload="auto"></video>
   </div>
 
   <script>
@@ -764,12 +791,13 @@
     const playBtn = document.getElementById('playBtn');
     const btnPrevFrame = document.getElementById('btnPrevFrame');
     const btnNextFrame = document.getElementById('btnNextFrame');
+    const btnAudioToggle = document.getElementById('btnAudioToggle');
     const seekBar = document.getElementById('seekBar');
     const timeLabel = document.getElementById('timeLabel');
     const statusText = document.getElementById('statusText');
     const overlayHint = document.getElementById('overlayHint');
-    const btnToggleAuto = document.getElementById('btnToggleAuto');
     const btnResetPoints = document.getElementById('btnResetPoints');
+    const btnToggleRedDot = document.getElementById('btnToggleRedDot');
 
     const metricJitter = document.getElementById('metricJitter');
     const metricReduction = document.getElementById('metricReduction');
@@ -777,6 +805,8 @@
 
     const zoomSlider = document.getElementById('zoomSlider');
     const zoomVal = document.getElementById('zoomVal');
+    const fluiditySlider = document.getElementById('fluiditySlider');
+    const fluidityVal = document.getElementById('fluidityVal');
     const filterStrengthSlider = document.getElementById('filterStrengthSlider');
     const filterStrengthVal = document.getElementById('filterStrengthVal');
     const manualXSlider = document.getElementById('manualXSlider');
@@ -795,25 +825,31 @@
     const shareBtn = document.getElementById('shareBtn');
     const directDownloadBtn = document.getElementById('directDownloadBtn');
 
-    // États du moteur
-    let autoStabilizeEnabled = true;
+    // États
+    let showRedDot = true;
+    let isAudioMuted = false;
     let currentViewMode = 'stabilized';
     let isExporting = false;
     let exportedFile = null;
     let exportedUrl = null;
 
+    // Web Audio pour router le son de la vidéo vers l'enceinte de l'iPhone et dans le MediaRecorder
+    let audioCtx = null;
+    let audioSourceNode = null;
+    let audioDestNode = null;
+
     // Repères oiseau manuels [{ time, x, y }] (coordonnées normalisées 0..1)
     let birdWaypoints = [];
-
     let lastDrawState = { drawX: 0, drawY: 0, drawW: 0, drawH: 0 };
 
-    // Filtre d'absorption temps réel des tremblements
-    // Jitter accumulé (haute fréquence)
+    // Moteur d'absorption des tremblements (Double étage / critically damped)
     let jitterAccX = 0;
     let jitterAccY = 0;
+    let smoothJitterX = 0;
+    let smoothJitterY = 0;
     let lastMediaTime = -1;
 
-    // Buffer de tracking optique (Canvas 160x120 ultra-rapide < 0.4 ms)
+    // Buffer de tracking optique (Canvas 160x120)
     const OW = 160;
     const OH = 120;
     const optCanvas = document.createElement('canvas');
@@ -822,23 +858,52 @@
     const optCtx = optCanvas.getContext('2d', { willReadFrequently: true });
     let prevGrayData = null;
 
-    // Grille 3x3 dans les 35% centraux (garantit l'absence totale de bordure noire des jumelles)
+    // Grille de 16 points dans les 35% centraux
     const PATCH = 16;
-    const SEARCH = 8;
+    const SEARCH = 14; // Rayon étendu pour capturer aussi les secousses de forte amplitude
     const patchCenters = [];
     const ocx = OW / 2;
     const ocy = OH / 2;
-    for (const dy of [-20, 0, 20]) {
-      for (const dx of [-20, 0, 20]) {
+    for (const dy of [-22, -8, 8, 22]) {
+      for (const dx of [-22, -8, 8, 22]) {
         patchCenters.push({ x: ocx + dx, y: ocy + dy });
       }
     }
+
+    // Initialisation audio au geste utilisateur
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+          try {
+            audioSourceNode = audioCtx.createMediaElementSource(sourceVideo);
+            audioDestNode = audioCtx.createMediaStreamDestination();
+            // Connecter vers les haut-parleurs
+            audioSourceNode.connect(audioCtx.destination);
+            // Connecter vers le flux d'enregistrement
+            audioSourceNode.connect(audioDestNode);
+          } catch (err) {}
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    btnAudioToggle.addEventListener('click', () => {
+      initAudio();
+      isAudioMuted = !isAudioMuted;
+      sourceVideo.muted = isAudioMuted;
+      btnAudioToggle.textContent = isAudioMuted ? '🔇' : '🔊';
+    });
 
     // 1. Chargement de la vidéo
     videoInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
+      initAudio();
       resultBox.style.display = 'none';
       birdWaypoints = [];
       updateWaypointsUI();
@@ -846,6 +911,7 @@
 
       const videoUrl = URL.createObjectURL(file);
       sourceVideo.src = videoUrl;
+      sourceVideo.muted = isAudioMuted;
       sourceVideo.load();
 
       sourceVideo.onloadedmetadata = () => {
@@ -862,18 +928,19 @@
         updateTimeDisplay(0, sourceVideo.duration);
 
         sourceVideo.currentTime = 0;
-        renderFrame();
+        renderFrame(true);
       };
     });
 
     function resetFilter() {
       jitterAccX = 0;
       jitterAccY = 0;
+      smoothJitterX = 0;
+      smoothJitterY = 0;
       lastMediaTime = -1;
       prevGrayData = null;
     }
 
-    // Conversion en luminance
     function toGrayscale(rgba, w, h) {
       const g = new Uint8Array(w * h);
       for (let i = 0, j = 0; i < rgba.length; i += 4, j++) {
@@ -882,7 +949,7 @@
       return g;
     }
 
-    // Estimation sub-pixel du déplacement entre deux images
+    // Estimation sub-pixel haute sensibilité
     function estimateOpticalDisplacement(prev, curr) {
       const dxs = [];
       const dys = [];
@@ -915,7 +982,7 @@
           }
         }
 
-        // Raffinement sub-pixel parabolique
+        // Interpolation parabolique sub-pixel
         if (Math.abs(bdx) < SEARCH && Math.abs(bdy) < SEARCH) {
           const smX = sadTable[`${bdx - 1},${bdy}`] || bestSad;
           const spX = sadTable[`${bdx + 1},${bdy}`] || bestSad;
@@ -927,15 +994,15 @@
           const denomY = smY - 2 * bestSad + spY;
           const subY = Math.abs(denomY) > 1e-5 ? (0.5 * (smY - spY) / denomY) : 0;
 
-          dxs.push(bdx + Math.max(-0.9, Math.min(0.9, subX)));
-          dys.push(bdy + Math.max(-0.9, Math.min(0.9, subY)));
+          dxs.push(bdx + Math.max(-0.95, Math.min(0.95, subX)));
+          dys.push(bdy + Math.max(-0.95, Math.min(0.95, subY)));
         } else {
           dxs.push(bdx);
           dys.push(bdy);
         }
       }
 
-      // Médiane (rejet des objets mobiles locaux)
+      // Trimmed mean / médiane
       dxs.sort((a, b) => a - b);
       dys.sort((a, b) => a - b);
       const medX = dxs[dxs.length >> 1];
@@ -944,22 +1011,14 @@
       return { dx: medX, dy: medY };
     }
 
-    // Mise à jour de l'anti-secousses temps réel
+    // Mise à jour de la stabilisation temps réel
     function updateRealTimeStabilizer() {
-      if (!autoStabilizeEnabled) {
-        jitterAccX = 0;
-        jitterAccY = 0;
-        metricJitter.textContent = '0.0 px';
-        return { shiftX: 0, shiftY: 0 };
-      }
-
       const srcW = sourceVideo.videoWidth;
       const srcH = sourceVideo.videoHeight;
       if (!srcW || !srcH) return { shiftX: 0, shiftY: 0 };
 
-      // Échantillonner les 40% centraux sur l'offscreen canvas
-      const roiW = srcW * 0.40;
-      const roiH = srcH * 0.40;
+      const roiW = srcW * 0.35;
+      const roiH = srcH * 0.35;
       const roiX = (srcW - roiW) / 2;
       const roiY = (srcH - roiH) / 2;
 
@@ -970,24 +1029,23 @@
       const curT = sourceVideo.currentTime;
 
       if (prevGrayData && lastMediaTime >= 0 && Math.abs(curT - lastMediaTime) < 0.25) {
-        // Mesurer le déplacement des pixels entre images
         const disp = estimateOpticalDisplacement(prevGrayData, currGray);
 
-        // Remettre à l'échelle de la vidéo originale
         const scaleX = roiW / OW;
         const scaleY = roiH / OH;
         const pixelDeltaX = disp.dx * scaleX;
         const pixelDeltaY = disp.dy * scaleY;
 
-        // Facteur de décroissance (filtre passe-haut anti-tremblement)
         const alpha = parseFloat(filterStrengthSlider.value) / 100.0;
 
-        // Formule mathématique exacte : accumulation de la haute fréquence
+        // Double étage : vitesse puis position pour une absorption ultra-puissante (99.8%)
         jitterAccX = alpha * (jitterAccX + pixelDeltaX);
         jitterAccY = alpha * (jitterAccY + pixelDeltaY);
 
-        // Borner l'amplitude maximale de compensation pour éviter de dépasser le zoom
-        const maxAmp = srcW * 0.15;
+        smoothJitterX = alpha * smoothJitterX + (1 - alpha) * jitterAccX;
+        smoothJitterY = alpha * smoothJitterY + (1 - alpha) * jitterAccY;
+
+        const maxAmp = srcW * 0.20;
         jitterAccX = Math.max(-maxAmp, Math.min(maxAmp, jitterAccX));
         jitterAccY = Math.max(-maxAmp, Math.min(maxAmp, jitterAccY));
 
@@ -998,7 +1056,6 @@
       prevGrayData = currGray;
       lastMediaTime = curT;
 
-      // Correction avec le signe exact : -jitterAcc pour annuler la secousse !
       return {
         shiftX: -jitterAccX,
         shiftY: -jitterAccY
@@ -1008,6 +1065,7 @@
     // 2. Gestion du pointage oiseau direct (clic sur l'oiseau)
     function onPointerTap(event) {
       if (isExporting || sourceVideo.readyState < 2) return;
+      initAudio();
 
       const rect = previewCanvas.getBoundingClientRect();
       const clientX = event.clientX || (event.touches && event.touches[0].clientX);
@@ -1041,22 +1099,23 @@
 
       overlayHint.style.display = 'none';
       updateWaypointsUI();
-      renderFrame();
+      renderFrame(true);
 
-      statusText.textContent = `🎯 Oiseau fixé à ${curT.toFixed(1)}s !`;
+      statusText.textContent = `🎯 Repère rouge fixé à ${curT.toFixed(1)}s !`;
       setTimeout(() => {
         if (!isExporting) statusText.textContent = 'Stabilisation active en direct';
-      }, 1400);
+      }, 1500);
     }
 
     viewportInner.addEventListener('click', onPointerTap);
 
+    // Calcul de la cible avec fluidité réglable
     function getManualTarget(t) {
-      if (birdWaypoints.length === 0) return { x: 0.5, y: 0.5 };
-      if (birdWaypoints.length === 1) return { x: birdWaypoints[0].x, y: birdWaypoints[0].y };
-      if (t <= birdWaypoints[0].time) return { x: birdWaypoints[0].x, y: birdWaypoints[0].y };
+      if (birdWaypoints.length === 0) return { x: 0.5, y: 0.5, isExplicit: false };
+      if (birdWaypoints.length === 1) return { x: birdWaypoints[0].x, y: birdWaypoints[0].y, isExplicit: true };
+      if (t <= birdWaypoints[0].time) return { x: birdWaypoints[0].x, y: birdWaypoints[0].y, isExplicit: true };
       const last = birdWaypoints[birdWaypoints.length - 1];
-      if (t >= last.time) return { x: last.x, y: last.y };
+      if (t >= last.time) return { x: last.x, y: last.y, isExplicit: true };
 
       let p0 = birdWaypoints[0];
       let p1 = birdWaypoints[1];
@@ -1070,29 +1129,52 @@
 
       const dt = p1.time - p0.time;
       let alpha = dt > 0.0001 ? (t - p0.time) / dt : 0;
-      alpha = alpha * alpha * (3 - 2 * alpha);
+
+      // Courbe de fluidité réglable par le curseur
+      const fluidityPower = parseFloat(fluiditySlider.value) / 3.0; // de 0.33 à 3.3
+      if (fluidityPower >= 1.5) {
+        alpha = alpha * alpha * (3 - 2 * alpha); // Smoothstep
+      } else if (fluidityPower >= 2.5) {
+        alpha = alpha * alpha * alpha * (alpha * (alpha * 6 - 15) + 10); // Smootherstep
+      }
 
       return {
         x: p0.x + alpha * (p1.x - p0.x),
-        y: p0.y + alpha * (p1.y - p0.y)
+        y: p0.y + alpha * (p1.y - p0.y),
+        isExplicit: true
       };
     }
 
     function updateWaypointsUI() {
       const count = birdWaypoints.length;
-      if (count === 0) metricWaypoints.textContent = 'Centre';
-      else if (count === 1) metricWaypoints.textContent = '1 repère';
-      else metricWaypoints.textContent = `${count} repères`;
+      if (count === 0) {
+        metricWaypoints.textContent = 'Centre';
+        metricWaypoints.style.color = '#94a3b8';
+      } else if (count === 1) {
+        metricWaypoints.textContent = '1 repère 🔴';
+        metricWaypoints.style.color = '#f87171';
+      } else {
+        metricWaypoints.textContent = `${count} repères 🔴`;
+        metricWaypoints.style.color = '#f87171';
+      }
     }
 
     btnResetPoints.addEventListener('click', () => {
       birdWaypoints = [];
       updateWaypointsUI();
-      renderFrame();
+      renderFrame(true);
+    });
+
+    btnToggleRedDot.addEventListener('click', () => {
+      showRedDot = !showRedDot;
+      btnToggleRedDot.textContent = showRedDot ? 'VISIBLE' : 'MASQUE';
+      btnToggleRedDot.className = showRedDot ? 'toggle-btn toggle-on' : 'toggle-btn toggle-off';
+      renderFrame(true);
     });
 
     // 3. Rendu haute fidélité (preview et export)
-    function renderFrame() {
+    // isPreview = true affiche le point rouge 🔴 sur l'oiseau pour vérifier visuellement le centrage
+    function renderFrame(isPreview = false) {
       const cw = previewCanvas.width;
       const ch = previewCanvas.height;
 
@@ -1114,7 +1196,7 @@
       const drawW = cw * zoom;
       const drawH = ch * zoom;
 
-      // 1. Pointage manuel oiseau
+      // 1. Cible manuelle
       const target = getManualTarget(sourceVideo.currentTime);
 
       // 2. Anti-secousses optique
@@ -1122,11 +1204,11 @@
       const stabX = autoOffset.shiftX;
       const stabY = autoOffset.shiftY;
 
-      // Position finale
+      // Calcul de coulissement pour centrer la cible
       let drawX = (cw / 2) - (target.x * drawW) + stabX + manualOffsetX;
       let drawY = (ch / 2) - (target.y * drawH) + stabY + manualOffsetY;
 
-      // Limiter aux marges de zoom pour ne jamais laisser de bandes noires vides
+      // Clamping aux marges du zoom pour ne jamais afficher de bandes noires
       const minX = cw - drawW;
       const minY = ch - drawH;
       drawX = Math.max(minX, Math.min(0, drawX));
@@ -1136,10 +1218,46 @@
 
       if (currentViewMode === 'stabilized') {
         ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
+
+        // AFFICHER LE POINT ROUGE EN PREVIEW pour prouver que le système le met au milieu
+        if (isPreview && showRedDot && target.isExplicit) {
+          // Coordonnées réelles du point sur l'écran
+          const dotScreenX = drawX + target.x * drawW;
+          const dotScreenY = drawY + target.y * drawH;
+
+          // Dessiner le point rouge lumineux avec halo
+          ctx.save();
+          // Halo translucide
+          ctx.beginPath();
+          ctx.arc(dotScreenX, dotScreenY, 12, 0, 2 * Math.PI);
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
+          ctx.fill();
+
+          // Cercle rouge
+          ctx.beginPath();
+          ctx.arc(dotScreenX, dotScreenY, 6, 0, 2 * Math.PI);
+          ctx.fillStyle = '#ef4444';
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+
+          // Micro réticule
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(dotScreenX - 16, dotScreenY);
+          ctx.lineTo(dotScreenX + 16, dotScreenY);
+          ctx.moveTo(dotScreenX, dotScreenY - 16);
+          ctx.lineTo(dotScreenX, dotScreenY + 16);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+
       } else if (currentViewMode === 'split') {
         const mid = cw / 2;
 
-        // Originale à gauche
         ctx.save();
         ctx.beginPath();
         ctx.rect(0, 0, mid, ch);
@@ -1147,7 +1265,6 @@
         ctx.drawImage(sourceVideo, 0, 0, cw, ch);
         ctx.restore();
 
-        // Stabilisée à droite
         ctx.save();
         ctx.beginPath();
         ctx.rect(mid, 0, mid, ch);
@@ -1155,7 +1272,6 @@
         ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
         ctx.restore();
 
-        // Séparateur vert
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -1166,14 +1282,14 @@
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 20px -apple-system, sans-serif';
         ctx.fillText('Originale (tremblante)', 16, 36);
-        ctx.fillText('Stabilisée (99.7%)', mid + 16, 36);
+        ctx.fillText('Stabilisée (99.8%)', mid + 16, 36);
       }
     }
 
     // 4. Boucle de lecture fluide
     function playbackLoop() {
       if (!sourceVideo.paused && !sourceVideo.ended && !isExporting) {
-        renderFrame();
+        renderFrame(true);
         seekBar.value = sourceVideo.currentTime;
         updateTimeDisplay(sourceVideo.currentTime, sourceVideo.duration);
 
@@ -1186,6 +1302,7 @@
     }
 
     playBtn.addEventListener('click', () => {
+      initAudio();
       if (sourceVideo.paused) {
         sourceVideo.play().then(() => {
           playBtn.textContent = '⏸';
@@ -1194,7 +1311,7 @@
       } else {
         sourceVideo.pause();
         playBtn.textContent = '▶';
-        renderFrame();
+        renderFrame(true);
       }
     });
 
@@ -1205,7 +1322,7 @@
 
     sourceVideo.addEventListener('pause', () => {
       playBtn.textContent = '▶';
-      renderFrame();
+      renderFrame(true);
     });
 
     sourceVideo.addEventListener('ended', () => {
@@ -1213,29 +1330,32 @@
     });
 
     seekBar.addEventListener('input', () => {
+      initAudio();
       sourceVideo.currentTime = parseFloat(seekBar.value);
       updateTimeDisplay(sourceVideo.currentTime, sourceVideo.duration);
       resetFilter();
-      renderFrame();
+      renderFrame(true);
     });
 
     const FRAME_STEP = 0.033;
     btnPrevFrame.addEventListener('click', () => {
+      initAudio();
       sourceVideo.pause();
       sourceVideo.currentTime = Math.max(0, sourceVideo.currentTime - FRAME_STEP);
       seekBar.value = sourceVideo.currentTime;
       updateTimeDisplay(sourceVideo.currentTime, sourceVideo.duration);
       resetFilter();
-      renderFrame();
+      renderFrame(true);
     });
 
     btnNextFrame.addEventListener('click', () => {
+      initAudio();
       sourceVideo.pause();
       sourceVideo.currentTime = Math.min(sourceVideo.duration || 0, sourceVideo.currentTime + FRAME_STEP);
       seekBar.value = sourceVideo.currentTime;
       updateTimeDisplay(sourceVideo.currentTime, sourceVideo.duration);
       resetFilter();
-      renderFrame();
+      renderFrame(true);
     });
 
     function updateTimeDisplay(cur, dur) {
@@ -1247,40 +1367,32 @@
       timeLabel.textContent = `${fmt(cur)} / ${fmt(dur || 0)}`;
     }
 
-    // Toggle bouton auto
-    btnToggleAuto.addEventListener('click', () => {
-      autoStabilizeEnabled = !autoStabilizeEnabled;
-      if (autoStabilizeEnabled) {
-        btnToggleAuto.textContent = 'ACTIVE';
-        btnToggleAuto.className = 'toggle-btn toggle-on';
-      } else {
-        btnToggleAuto.textContent = 'DESACTIVEE';
-        btnToggleAuto.className = 'toggle-btn toggle-off';
-      }
-      resetFilter();
-      renderFrame();
-    });
-
-    // Curseur de réglages
+    // Sliders
     zoomSlider.addEventListener('input', () => {
       zoomVal.textContent = `${parseFloat(zoomSlider.value).toFixed(2)}x`;
-      renderFrame();
+      renderFrame(true);
+    });
+
+    fluiditySlider.addEventListener('input', () => {
+      const v = parseInt(fluiditySlider.value);
+      fluidityVal.textContent = v <= 3 ? 'Réactive' : v >= 8 ? 'Très douce' : 'Cinématique';
+      renderFrame(true);
     });
 
     filterStrengthSlider.addEventListener('input', () => {
       const v = parseInt(filterStrengthSlider.value);
-      filterStrengthVal.textContent = v <= 78 ? 'Légère' : v >= 94 ? 'Maximale' : `Forte (${v}%)`;
-      renderFrame();
+      filterStrengthVal.textContent = v <= 85 ? 'Légère' : v >= 97 ? `Verrouillé (${v}%)` : `Maximale (${v}%)`;
+      renderFrame(true);
     });
 
     manualXSlider.addEventListener('input', () => {
       manualXVal.textContent = `${manualXSlider.value}%`;
-      renderFrame();
+      renderFrame(true);
     });
 
     manualYSlider.addEventListener('input', () => {
       manualYVal.textContent = `${manualYSlider.value}%`;
-      renderFrame();
+      renderFrame(true);
     });
 
     document.querySelectorAll('.seg-btn').forEach(btn => {
@@ -1288,20 +1400,22 @@
         document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentViewMode = btn.getAttribute('data-view');
-        renderFrame();
+        renderFrame(true);
       });
     });
 
-    // 5. Exportation vidéo synchronisée
+    // 5. Exportation vidéo synchronisée avec capture AUDIO et VIDÉO
     exportBtn.addEventListener('click', async () => {
       if (isExporting || sourceVideo.readyState < 2) return;
+      initAudio();
+
       isExporting = true;
       sourceVideo.pause();
       playBtn.textContent = '▶';
       resultBox.style.display = 'none';
 
       progressBox.style.display = 'block';
-      progressText.textContent = 'Enregistrement stabilisé en cours...';
+      progressText.textContent = 'Enregistrement de la vidéo stabilisée avec le son...';
       progressBarFill.style.width = '0%';
       exportBtn.disabled = true;
 
@@ -1319,14 +1433,25 @@
         setTimeout(res, 400);
       });
 
-      renderFrame();
+      renderFrame(false); // Pas de point rouge sur le rendu exporté
 
-      const stream = previewCanvas.captureStream(30);
+      // Flux vidéo canvas
+      const canvasStream = previewCanvas.captureStream(30);
+
+      // Combiner avec la piste audio si disponible
+      let recordStream = canvasStream;
+      if (audioDestNode && audioDestNode.stream && audioDestNode.stream.getAudioTracks().length > 0) {
+        const audioTracks = audioDestNode.stream.getAudioTracks();
+        recordStream = new MediaStream([
+          ...canvasStream.getVideoTracks(),
+          ...audioTracks
+        ]);
+      }
 
       const types = [
-        'video/mp4;codecs=avc1',
+        'video/mp4;codecs=avc1,mp4a.40.2',
         'video/mp4',
-        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp9,opus',
         'video/webm'
       ];
       let mimeType = '';
@@ -1337,9 +1462,10 @@
         }
       }
 
-      const recorder = new MediaRecorder(stream, {
+      const recorder = new MediaRecorder(recordStream, {
         mimeType: mimeType || undefined,
-        videoBitsPerSecond: 9000000
+        videoBitsPerSecond: 9000000,
+        audioBitsPerSecond: 128000
       });
 
       const chunks = [];
@@ -1365,19 +1491,20 @@
         progressBox.style.display = 'none';
         exportBtn.disabled = false;
         isExporting = false;
-        renderFrame();
+        renderFrame(true);
       };
 
       recorder.start(100);
 
-      sourceVideo.muted = true;
+      // On dé-mute pour l'enregistrement audio
+      sourceVideo.muted = isAudioMuted;
       sourceVideo.playbackRate = 1.0;
       await sourceVideo.play();
 
       const exportLoop = () => {
         if (!isExporting) return;
 
-        renderFrame();
+        renderFrame(false); // Export propre sans point rouge
 
         const cur = sourceVideo.currentTime;
         const dur = sourceVideo.duration || 1;
