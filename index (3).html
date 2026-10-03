@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>BinoStabilize | Stabilisateur Vidéo Jumelles</title>
+  <style>
+    :root {
+      --bg: #0f141c;
+      --card-bg: #18202c;
+      --card-border: #263447;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --danger: #ef4444;
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    main {
+      flex: 1;
+      max-width: 520px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Import Box */
+    .import-zone {
+      border: 2px dashed #33445b;
+      border-radius: var(--radius);
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(24, 32, 44, 0.6);
+    }
+
+    .import-zone:active {
+      background: rgba(38, 52, 71, 0.8);
+      border-color: var(--accent);
+    }
+
+    .import-icon {
+      font-size: 38px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .btn-file {
+      display: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #042517;
+    }
+
+    .btn-primary:active {
+      background: var(--accent-hover);
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background: #273549;
+      color: var(--text);
+    }
+
+    .btn-secondary:active {
+      background: #33445d;
+      transform: scale(0.98);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Video Player Canvas */
+    .viewport-wrapper {
+      position: relative;
+      width: 100%;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas#previewCanvas {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .video-overlay-tag {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* Controls */
+    .controls-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .control-header span.val {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #2b394d;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+    }
+
+    .segmented {
+      display: flex;
+      background: #0f1621;
+      padding: 3px;
+      border-radius: 10px;
+      border: 1px solid #233042;
+      gap: 2px;
+    }
+
+    .seg-btn {
+      flex: 1;
+      padding: 8px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .seg-btn.active {
+      background: #243447;
+      color: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Playback bar */
+    .play-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .play-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #243447;
+      border: 1px solid #364861;
+      color: #fff;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .play-btn:active {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .time-label {
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+      width: 80px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Progress bar for analysis & export */
+    .progress-box {
+      margin-top: 10px;
+      background: #0f1520;
+      border-radius: 8px;
+      padding: 10px;
+      border: 1px solid #233144;
+      display: none;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+
+    .progress-bar-bg {
+      height: 6px;
+      background: #243346;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.1s linear;
+    }
+
+    /* Info notice */
+    .notice {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.45;
+      background: rgba(38, 52, 71, 0.4);
+      padding: 10px 12px;
+      border-radius: 8px;
+      border-left: 3px solid var(--accent);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    footer .author {
+      color: #94a3b8;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge">Ornithologie &amp; Digiscopie</div>
+    <h1>🔭 BinoStabilize</h1>
+    <div class="subtitle">Stabilisation et recadrage vidéo pour observations aux jumelles</div>
+  </header>
+
+  <main>
+    <!-- Étape 1 : Importer -->
+    <div class="card" id="importCard">
+      <div class="import-zone" id="dropZone" onclick="document.getElementById('videoInput').click()">
+        <span class="import-icon">🦅</span>
+        <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px;">Choisir une vidéo de la photothèque</div>
+        <div style="font-size: 12px; color: var(--text-muted);">Format MP4, MOV ou prise de vue directe</div>
+      </div>
+      <input type="file" id="videoInput" class="btn-file" accept="video/*" />
+    </div>
+
+    <!-- Étape 2 : Lecteur et Réglages -->
+    <div class="card" id="editorCard" style="display: none;">
+      <div class="viewport-wrapper">
+        <canvas id="previewCanvas"></canvas>
+        <div class="video-overlay-tag" id="statusBadge">Stabilisé</div>
+      </div>
+
+      <!-- Playback Controls -->
+      <div class="play-row">
+        <button class="play-btn" id="playBtn" aria-label="Lecture">▶</button>
+        <input type="range" id="seekBar" min="0" max="100" value="0" step="0.1">
+        <span class="time-label" id="timeLabel">0:00 / 0:00</span>
+      </div>
+
+      <!-- Barre de progression -->
+      <div class="progress-box" id="progressBox">
+        <div class="progress-header">
+          <span id="progressText">Analyse des mouvements...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBarFill"></div>
+        </div>
+      </div>
+
+      <!-- Réglages -->
+      <div class="controls-grid">
+        <!-- Mode d'affichage -->
+        <div class="control-row">
+          <div class="control-header">
+            <span>Visualisation</span>
+          </div>
+          <div class="segmented">
+            <button class="seg-btn active" data-view="stabilized">Stabilisée</button>
+            <button class="seg-btn" data-view="split">Comparaison</button>
+            <button class="seg-btn" data-view="original">Originale</button>
+          </div>
+        </div>
+
+        <!-- Zoom / Cropping -->
+        <div class="control-row">
+          <div class="control-header">
+            <span>Recadrage / Zoom (rogner le rond des jumelles)</span>
+            <span class="val" id="cropVal">+25%</span>
+          </div>
+          <input type="range" id="cropSlider" min="5" max="65" value="25" step="1">
+        </div>
+
+        <!-- Force de lissage -->
+        <div class="control-row">
+          <div class="control-header">
+            <span>Force de stabilisation (lissage)</span>
+            <span class="val" id="smoothVal">Élevée (30f)</span>
+          </div>
+          <input type="range" id="smoothSlider" min="6" max="60" value="30" step="2">
+        </div>
+
+        <!-- Recentrage manuel X / Y -->
+        <div class="control-row">
+          <div class="control-header">
+            <span>Recentrage vertical (ajustement oiseau)</span>
+            <span class="val" id="offsetYVal">0%</span>
+          </div>
+          <input type="range" id="offsetYSlider" min="-30" max="30" value="0" step="1">
+        </div>
+
+        <div class="notice">
+          💡 <strong>Astuce jumelles :</strong> Le zoom permet d'éliminer la bordure noire circulaire créée par l'oculaire. L'analyse suit automatiquement les détails centraux pour neutraliser les tremblements de vos mains.
+        </div>
+
+        <!-- Boutons d'action -->
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 6px;">
+          <button class="btn btn-primary" id="exportBtn">
+            💾 Exporter et Enregistrer la vidéo
+          </button>
+          <button class="btn btn-secondary" onclick="document.getElementById('videoInput').click()">
+            🔄 Choisir une autre vidéo
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div>BinoStabilize  :  Traitement 100% local sur votre iPhone (aucune vidéo envoyée sur internet)</div>
+    <div style="margin-top: 6px;">by <span class="author">Benjamin P.</span></div>
+  </footer>
+
+  <video id="sourceVideo" playsinline webkit-playsinline muted style="display: none;"></video>
+
+  <script>
+    // Variables globales
+    const sourceVideo = document.getElementById('sourceVideo');
+    const previewCanvas = document.getElementById('previewCanvas');
+    const ctx = previewCanvas.getContext('2d');
+    const videoInput = document.getElementById('videoInput');
+    const editorCard = document.getElementById('editorCard');
+    const importCard = document.getElementById('importCard');
+
+    const playBtn = document.getElementById('playBtn');
+    const seekBar = document.getElementById('seekBar');
+    const timeLabel = document.getElementById('timeLabel');
+    const statusBadge = document.getElementById('statusBadge');
+
+    const cropSlider = document.getElementById('cropSlider');
+    const cropVal = document.getElementById('cropVal');
+    const smoothSlider = document.getElementById('smoothSlider');
+    const smoothVal = document.getElementById('smoothVal');
+    const offsetYSlider = document.getElementById('offsetYSlider');
+    const offsetYVal = document.getElementById('offsetYVal');
+
+    const progressBox = document.getElementById('progressBox');
+    const progressText = document.getElementById('progressText');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressBarFill = document.getElementById('progressBarFill');
+    const exportBtn = document.getElementById('exportBtn');
+
+    // États
+    let rawMotionVectors = []; // [{dx, dy, time}]
+    let smoothedTrajectory = []; // [{x, y, time}]
+    let analysisDone = false;
+    let isAnalyzing = false;
+    let isExporting = false;
+    let currentViewMode = 'stabilized'; // 'stabilized', 'split', 'original'
+
+    // Offscreen canvas pour l'analyse par corrélation de blocs
+    const analysisCanvas = document.createElement('canvas');
+    const analysisCtx = analysisCanvas.getContext('2d', { willReadFrequently: true });
+    const AW = 72; // Résolution d'analyse (rapide et précise sur mobile)
+    const AH = 72;
+    analysisCanvas.width = AW;
+    analysisCanvas.height = AH;
+
+    // Gestion de l'import vidéo
+    videoInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const videoUrl = URL.createObjectURL(file);
+      sourceVideo.src = videoUrl;
+      sourceVideo.load();
+
+      sourceVideo.onloadedmetadata = () => {
+        editorCard.style.display = 'block';
+        previewCanvas.width = sourceVideo.videoWidth || 1280;
+        previewCanvas.height = sourceVideo.videoHeight || 720;
+        seekBar.max = sourceVideo.duration;
+        updateTimeDisplay(0, sourceVideo.duration);
+
+        // Lancer l'analyse du mouvement
+        startMotionAnalysis();
+      };
+    });
+
+    // Écouteurs de sliders
+    cropSlider.addEventListener('input', () => {
+      cropVal.textContent = `+${cropSlider.value}%`;
+      requestAnimationFrame(renderFrame);
+    });
+
+    smoothSlider.addEventListener('input', () => {
+      const val = parseInt(smoothSlider.value);
+      let desc = 'Moyenne';
+      if (val <= 14) desc = 'Légère';
+      else if (val >= 36) desc = 'Très forte';
+      smoothVal.textContent = `${desc} (${val}f)`;
+      recalculateSmoothing();
+      requestAnimationFrame(renderFrame);
+    });
+
+    offsetYSlider.addEventListener('input', () => {
+      offsetYVal.textContent = `${offsetYSlider.value}%`;
+      requestAnimationFrame(renderFrame);
+    });
+
+    // Mode segmented buttons
+    document.querySelectorAll('.seg-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentViewMode = btn.getAttribute('data-view');
+        statusBadge.textContent = currentViewMode === 'stabilized' ? 'Stabilisé' :
+                                  currentViewMode === 'split' ? 'Comparaison' : 'Original';
+        requestAnimationFrame(renderFrame);
+      });
+    });
+
+    // Lecture / Pause
+    playBtn.addEventListener('click', () => {
+      if (sourceVideo.paused) {
+        sourceVideo.play();
+        playBtn.textContent = '⏸';
+      } else {
+        sourceVideo.pause();
+        playBtn.textContent = '▶';
+      }
+    });
+
+    sourceVideo.addEventListener('timeupdate', () => {
+      if (!isAnalyzing && !isExporting) {
+        seekBar.value = sourceVideo.currentTime;
+        updateTimeDisplay(sourceVideo.currentTime, sourceVideo.duration);
+        renderFrame();
+      }
+    });
+
+    sourceVideo.addEventListener('ended', () => {
+      playBtn.textContent = '▶';
+    });
+
+    seekBar.addEventListener('input', () => {
+      sourceVideo.currentTime = parseFloat(seekBar.value);
+      renderFrame();
+    });
+
+    function updateTimeDisplay(cur, dur) {
+      const fmt = (s) => {
+        const m = Math.floor(s / 60);
+        const sec = Math.floor(s % 60);
+        return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+      };
+      timeLabel.textContent = `${fmt(cur)} / ${fmt(dur || 0)}`;
+    }
+
+    // 1. Analyse du mouvement (Block Matching / SAD sur le centre du champ jumelles)
+    async function startMotionAnalysis() {
+      isAnalyzing = true;
+      analysisDone = false;
+      progressBox.style.display = 'block';
+      progressText.textContent = 'Détection des tremblements aux jumelles...';
+      progressBarFill.style.width = '0%';
+      rawMotionVectors = [];
+
+      const duration = sourceVideo.duration;
+      const fps = 25; // 25 points de contrôle par seconde
+      const step = 1 / fps;
+      const totalSteps = Math.floor(duration * fps);
+
+      let prevGray = null;
+      let curStep = 0;
+
+      // Définir la zone centrale (ROI oculaire jumelles, pour ignorer le cercle noir externe)
+      const roiW = sourceVideo.videoWidth * 0.5;
+      const roiH = sourceVideo.videoHeight * 0.5;
+      const roiX = (sourceVideo.videoWidth - roiW) / 2;
+      const roiY = (sourceVideo.videoHeight - roiH) / 2;
+
+      sourceVideo.pause();
+      sourceVideo.currentTime = 0;
+
+      const analyzeNextFrame = async () => {
+        if (curStep >= totalSteps) {
+          // Fin de l'analyse
+          isAnalyzing = false;
+          analysisDone = true;
+          recalculateSmoothing();
+          progressBox.style.display = 'none';
+          sourceVideo.currentTime = 0;
+          renderFrame();
+          return;
+        }
+
+        const t = curStep * step;
+        sourceVideo.currentTime = Math.min(t, duration - 0.01);
+
+        await new Promise(resolve => {
+          const onSeek = () => {
+            sourceVideo.removeEventListener('seeked', onSeek);
+            resolve();
+          };
+          sourceVideo.addEventListener('seeked', onSeek);
+        });
+
+        // Extraire la zone centrale
+        analysisCtx.drawImage(sourceVideo, roiX, roiY, roiW, roiH, 0, 0, AW, AH);
+        const imgData = analysisCtx.getImageData(0, 0, AW, AH);
+        const currGray = toGrayscale(imgData.data, AW, AH);
+
+        let dx = 0, dy = 0;
+        if (prevGray) {
+          const motion = computeDisplacement(prevGray, currGray, AW, AH);
+          // Remettre à l'échelle de la vidéo originale
+          dx = motion.dx * (roiW / AW);
+          dy = motion.dy * (roiH / AH);
+        }
+
+        rawMotionVectors.push({ time: t, dx, dy });
+        prevGray = currGray;
+        curStep++;
+
+        const percent = Math.round((curStep / totalSteps) * 100);
+        progressBarFill.style.width = `${percent}%`;
+        progressPercent.textContent = `${percent}%`;
+
+        // Laisser respirer l'UI
+        setTimeout(analyzeNextFrame, 1);
+      };
+
+      analyzeNextFrame();
+    }
+
+    // Calcul de la luminance
+    function toGrayscale(rgba, w, h) {
+      const gray = new Uint8Array(w * h);
+      for (let i = 0, j = 0; i < rgba.length; i += 4, j++) {
+        // Luminance pondérée standard
+        gray[j] = (rgba[i] * 77 + rgba[i + 1] * 150 + rgba[i + 2] * 29) >> 8;
+      }
+      return gray;
+    }
+
+    // Recherche de translation par Sum of Absolute Differences (SAD)
+    function computeDisplacement(prev, curr, w, h) {
+      const searchR = 9; // Rayon de recherche de déplacement
+      let bestDx = 0;
+      let bestDy = 0;
+      let minSad = Infinity;
+
+      // Échantillonnage avec pas de 2 pour la performance
+      for (let dy = -searchR; dy <= searchR; dy++) {
+        for (let dx = -searchR; dx <= searchR; dx++) {
+          let sad = 0;
+          for (let y = searchR; y < h - searchR; y += 2) {
+            const rowP = y * w;
+            const rowC = (y + dy) * w + dx;
+            for (let x = searchR; x < w - searchR; x += 2) {
+              sad += Math.abs(prev[rowP + x] - curr[rowC + x]);
+            }
+          }
+          if (sad < minSad) {
+            minSad = sad;
+            bestDx = dx;
+            bestDy = dy;
+          }
+        }
+      }
+      return { dx: bestDx, dy: bestDy };
+    }
+
+    // 2. Trajectoire cumulée et lissage gaussien / moyenne mobile
+    function recalculateSmoothing() {
+      if (rawMotionVectors.length === 0) return;
+
+      // 1. Position absolue cumulée
+      let cumX = 0, cumY = 0;
+      const trajectory = rawMotionVectors.map(v => {
+        cumX += v.dx;
+        cumY += v.dy;
+        return { time: v.time, x: cumX, y: cumY };
+      });
+
+      // 2. Lissage par fenêtre glissante (force de stabilisation)
+      const windowSize = parseInt(smoothSlider.value);
+      const half = Math.floor(windowSize / 2);
+
+      smoothedTrajectory = trajectory.map((pt, idx) => {
+        let sumX = 0, sumY = 0, count = 0;
+        const start = Math.max(0, idx - half);
+        const end = Math.min(trajectory.length - 1, idx + half);
+
+        for (let i = start; i <= end; i++) {
+          sumX += trajectory[i].x;
+          sumY += trajectory[i].y;
+          count++;
+        }
+
+        const smoothX = sumX / count;
+        const smoothY = sumY / count;
+
+        return {
+          time: pt.time,
+          // Correction inverse pour neutraliser la secousse
+          shiftX: smoothX - pt.x,
+          shiftY: smoothY - pt.y
+        };
+      });
+    }
+
+    // Récupérer le décalage de stabilisation pour un instant t donné
+    function getStabilizationOffset(t) {
+      if (!smoothedTrajectory || smoothedTrajectory.length === 0) return { shiftX: 0, shiftY: 0 };
+
+      // Recherche par dichotomie ou interpolation simple
+      let low = 0, high = smoothedTrajectory.length - 1;
+      while (low <= high) {
+        const mid = (low + high) >> 1;
+        if (smoothedTrajectory[mid].time < t) low = mid + 1;
+        else high = mid - 1;
+      }
+
+      const idx = Math.min(Math.max(low, 0), smoothedTrajectory.length - 1);
+      return smoothedTrajectory[idx];
+    }
+
+    // 3. Rendu du Canvas avec Zoom, Crop et Stabilisation
+    function renderFrame() {
+      const vw = previewCanvas.width;
+      const vh = previewCanvas.height;
+
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, vw, vh);
+
+      if (sourceVideo.readyState < 2) return;
+
+      const cropPercent = parseFloat(cropSlider.value) / 100;
+      const offsetYFactor = (parseFloat(offsetYSlider.value) / 100) * vh;
+
+      if (currentViewMode === 'original') {
+        // Simple rendu plein écran sans stabilisation
+        ctx.drawImage(sourceVideo, 0, 0, vw, vh);
+        return;
+      }
+
+      const offset = getStabilizationOffset(sourceVideo.currentTime);
+      const shiftX = offset.shiftX;
+      const shiftY = offset.shiftY;
+
+      // Calcul du zoom pour masquer les décalages de stabilisation et le rond noir des jumelles
+      const scale = 1 + cropPercent;
+      const drawW = vw * scale;
+      const drawH = vh * scale;
+
+      const drawX = (vw - drawW) / 2 + shiftX;
+      const drawY = (vh - drawH) / 2 + shiftY + offsetYFactor;
+
+      if (currentViewMode === 'stabilized') {
+        ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
+      } else if (currentViewMode === 'split') {
+        // Vue comparative : Gauche = Originale, Droite = Stabilisée
+        const midX = vw / 2;
+
+        // Originale à gauche
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, midX, vh);
+        ctx.clip();
+        ctx.drawImage(sourceVideo, 0, 0, vw, vh);
+        ctx.restore();
+
+        // Stabilisée à droite
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(midX, 0, midX, vh);
+        ctx.clip();
+        ctx.drawImage(sourceVideo, drawX, drawY, drawW, drawH);
+        ctx.restore();
+
+        // Ligne de démarcation centrale
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(midX, 0);
+        ctx.lineTo(midX, vh);
+        ctx.stroke();
+
+        // Labels
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px -apple-system, sans-serif';
+        ctx.fillText('Originale', 20, 35);
+        ctx.fillText('Stabilisée', midX + 20, 35);
+      }
+    }
+
+    // 4. Exportation et Enregistrement dans la photothèque iPhone
+    exportBtn.addEventListener('click', async () => {
+      if (isExporting || isAnalyzing) return;
+      isExporting = true;
+      sourceVideo.pause();
+      playBtn.textContent = '▶';
+
+      progressBox.style.display = 'block';
+      progressText.textContent = 'Exportation haute qualité en cours...';
+      progressBarFill.style.width = '0%';
+      exportBtn.disabled = true;
+
+      // Création du flux canvas
+      const stream = previewCanvas.captureStream(30);
+
+      // Support des formats MP4 pour iOS Safari
+      let mimeType = 'video/mp4;codecs=avc1';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/mp4';
+      }
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/webm;codecs=vp9';
+      }
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/webm';
+      }
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: mimeType,
+        videoBitsPerSecond: 8000000 // 8 Mbps pour une netteté optimale sur l'oiseau
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob(chunks, { type: mimeType });
+        const file = new File([blob], `oiseau_stabilise_${Date.now()}.${ext}`, { type: mimeType });
+
+        progressText.textContent = 'Prêt !';
+        progressBarFill.style.width = '100%';
+
+        // Essayer de proposer le menu de partage natif iOS (permet d'enregistrer directement dans Photos)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'Vidéo Jumelles Stabilisée',
+              text: 'Vidéo stabilisée avec BinoStabilize'
+            });
+          } catch (err) {
+            // L'utilisateur a simplement fermé la fenêtre de partage
+          }
+        } else {
+          // Téléchargement standard
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = file.name;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 2000);
+        }
+
+        setTimeout(() => {
+          progressBox.style.display = 'none';
+          exportBtn.disabled = false;
+          isExporting = false;
+        }, 1500);
+      };
+
+      // Exécution image par image pour un rendu parfait sans saccade
+      recorder.start();
+      sourceVideo.currentTime = 0;
+
+      const duration = sourceVideo.duration;
+      const fps = 30;
+      const totalFrames = Math.floor(duration * fps);
+      let curFrame = 0;
+
+      // Mode export temporaire forcé en stabilisé
+      const prevMode = currentViewMode;
+      currentViewMode = 'stabilized';
+
+      const renderExportLoop = async () => {
+        if (curFrame >= totalFrames) {
+          recorder.stop();
+          currentViewMode = prevMode;
+          renderFrame();
+          return;
+        }
+
+        const t = curFrame / fps;
+        sourceVideo.currentTime = Math.min(t, duration - 0.01);
+
+        await new Promise(res => {
+          const onSeek = () => {
+            sourceVideo.removeEventListener('seeked', onSeek);
+            res();
+          };
+          sourceVideo.addEventListener('seeked', onSeek);
+        });
+
+        renderFrame();
+        curFrame++;
+
+        const percent = Math.round((curFrame / totalFrames) * 100);
+        progressBarFill.style.width = `${percent}%`;
+        progressPercent.textContent = `${percent}%`;
+
+        setTimeout(renderExportLoop, 15);
+      };
+
+      renderExportLoop();
+    });
+  </script>
+</body>
+</html>
